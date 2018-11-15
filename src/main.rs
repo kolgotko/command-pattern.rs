@@ -9,13 +9,13 @@ fn main() -> Result<(), Box<Error>> {
 
     let result = exec_or_undo_all!(inv, {
 
-        exec: {
+        exec: move {
 
             println!("exec 1");
             Ok("i am result")
 
         },
-        unexec: {
+        unexec: move {
 
             println!("unexec 1");
             Ok(())
@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<Error>> {
 
     println!("received: {}", result);
 
-    let result = exec_or_undo_all!(inv, {
+    let result = exec_or_undo_all!(inv, move {
 
         println!("exec 2");
         Err("i am error")?

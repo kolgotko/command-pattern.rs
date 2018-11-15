@@ -105,7 +105,7 @@ macro_rules! exec_by_name {
         $($move_exec:ident)* $exec_body:block
     ) => {
         $invoker.$name(Command {
-            exec: Box::new($($move_unexec)* || $exec_body),
+            exec: Box::new($($move_exec)* || $exec_body),
             unexec: Box::new(|| Ok(())),
         })
     };
