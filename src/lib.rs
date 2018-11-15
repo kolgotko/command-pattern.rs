@@ -90,22 +90,22 @@ macro_rules! exec_by_name {
         $name:ident,
         $invoker:ident,
         {
-            exec: $exec_body:block,
-            unexec: $unexec_body:block
+            exec: $($move_exec:ident)* $exec_body:block,
+            unexec: $($move_unexec:ident)* $unexec_body:block
         }
     ) => {
         $invoker.$name(Command {
-            exec: Box::new(move || $exec_body),
-            unexec: Box::new(move || $unexec_body),
+            exec: Box::new($($move_exec)* || $exec_body),
+            unexec: Box::new($($move_unexec)* || $unexec_body),
         })
     };
     (
         $name:ident,
         $invoker:ident,
-        $exec_body:block
+        $($move_exec:ident)* $exec_body:block
     ) => {
         $invoker.$name(Command {
-            exec: Box::new(move || $exec_body),
+            exec: Box::new($($move_unexec)* || $exec_body),
             unexec: Box::new(|| Ok(())),
         })
     };
