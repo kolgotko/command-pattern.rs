@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<Error>> {
         exec: move {
 
             println!("exec 1");
-            Ok(Box::new("i am result"))
+            Ok(Box::new("i am result") as Box<Any>)
 
         },
         unexec: move {

@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-pub trait CommandTrait<R,E,U> {
+pub trait CommandTrait<R,E,U>: fmt::Debug {
     fn get_exec(&self) -> &Box<Fn() -> Result<R, E>>;
     fn get_unexec(&self) -> &Box<Fn() -> Result<(), U>>;
 }
@@ -31,8 +31,8 @@ impl<R,E,U> fmt::Debug for Command<R,E,U> {
 
 #[derive(Debug)]
 pub struct Invoker<R,E=Box<Error>,U=E> {
-    commands: Vec<Command<R,E,U>>,
-    undo_commands: Vec<Command<R,E,U>>,
+    commands: Vec<Box<dyn CommandTrait<R,E,U>>>,
+    undo_commands: Vec<Box<dyn CommandTrait<R,E,U>>>,
 }
 
 impl<R,E,U> Invoker<R,E,U> {
@@ -43,15 +43,15 @@ impl<R,E,U> Invoker<R,E,U> {
         }
     }
 
-    pub fn exec(&mut self, command: Command<R,E,U>) -> Result<R, E> {
-        let exec = &command.exec;
+    pub fn exec(&mut self, command: impl CommandTrait<R,E,U> + 'static) -> Result<R, E> {
+        let exec = command.get_exec();
         self.undo_commands.clear();
         let result = exec();
-        self.commands.push(command);
+        self.commands.push(Box::new(command));
         result
     }
 
-    pub fn exec_or_undo(&mut self, command: Command<R,E,U>) -> Result<R, E> {
+    pub fn exec_or_undo(&mut self, command: impl CommandTrait<R,E,U> + 'static) -> Result<R, E> {
         let result = self.exec(command);
 
         match result {
@@ -63,7 +63,7 @@ impl<R,E,U> Invoker<R,E,U> {
         }
     }
 
-    pub fn exec_or_undo_all(&mut self, command: Command<R,E,U>) -> Result<R, E> {
+    pub fn exec_or_undo_all(&mut self, command: impl CommandTrait<R,E,U> + 'static) -> Result<R, E> {
         let result = self.exec(command);
 
         match result {
@@ -83,7 +83,7 @@ impl<R,E,U> Invoker<R,E,U> {
 
     pub fn undo(&mut self) -> Result<(), U> {
         let command = self.commands.pop().unwrap();
-        let unexec = &command.unexec;
+        let unexec = command.get_unexec();
         let result = unexec();
         self.undo_commands.push(command);
         result
@@ -91,7 +91,7 @@ impl<R,E,U> Invoker<R,E,U> {
 
     pub fn redo(&mut self) -> Result<R, E> {
         let command = self.undo_commands.pop().unwrap();
-        let exec = &command.exec;
+        let exec = command.get_exec();
         let result = exec();
         self.commands.push(command);
         result
