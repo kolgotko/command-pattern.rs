@@ -1,12 +1,26 @@
 use std::error::Error;
 use std::fmt;
 
-pub struct Command<E, U> {
-    pub exec: Box<Fn() -> Result<E, Box<Error>>>,
-    pub unexec: Box<Fn() -> Result<U, Box<Error>>>,
+pub trait CommandTrait<R,E,U> {
+    fn get_exec(&self) -> &Box<Fn() -> Result<R, E>>;
+    fn get_unexec(&self) -> &Box<Fn() -> Result<(), U>>;
 }
 
-impl<E, U> fmt::Debug for Command<E, U> {
+pub struct Command<R,E=Box<Error>,U=E> {
+    pub exec: Box<Fn() -> Result<R, E>>,
+    pub unexec: Box<Fn() -> Result<(), U>>,
+}
+
+impl<R,E,U> CommandTrait<R,E,U> for Command<R,E,U> {
+    fn get_exec(&self) -> &Box<Fn() -> Result<R, E>> {
+        &self.exec
+    }
+    fn get_unexec(&self) -> &Box<Fn() -> Result<(), U>> {
+        &self.unexec
+    }
+}
+
+impl<R,E,U> fmt::Debug for Command<R,E,U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -16,12 +30,12 @@ impl<E, U> fmt::Debug for Command<E, U> {
 }
 
 #[derive(Debug)]
-pub struct Invoker<E, U> {
-    commands: Vec<Command<E, U>>,
-    undo_commands: Vec<Command<E, U>>,
+pub struct Invoker<R,E=Box<Error>,U=E> {
+    commands: Vec<Command<R,E,U>>,
+    undo_commands: Vec<Command<R,E,U>>,
 }
 
-impl<E, U> Invoker<E, U> {
+impl<R,E,U> Invoker<R,E,U> {
     pub fn new() -> Self {
         Invoker {
             commands: Vec::new(),
@@ -29,7 +43,7 @@ impl<E, U> Invoker<E, U> {
         }
     }
 
-    pub fn exec(&mut self, command: Command<E, U>) -> Result<E, Box<Error>> {
+    pub fn exec(&mut self, command: Command<R,E,U>) -> Result<R, E> {
         let exec = &command.exec;
         self.undo_commands.clear();
         let result = exec();
@@ -37,7 +51,7 @@ impl<E, U> Invoker<E, U> {
         result
     }
 
-    pub fn exec_or_undo(&mut self, command: Command<E, U>) -> Result<E, Box<Error>> {
+    pub fn exec_or_undo(&mut self, command: Command<R,E,U>) -> Result<R, E> {
         let result = self.exec(command);
 
         match result {
@@ -49,7 +63,7 @@ impl<E, U> Invoker<E, U> {
         }
     }
 
-    pub fn exec_or_undo_all(&mut self, command: Command<E, U>) -> Result<E, Box<Error>> {
+    pub fn exec_or_undo_all(&mut self, command: Command<R,E,U>) -> Result<R, E> {
         let result = self.exec(command);
 
         match result {
@@ -67,7 +81,7 @@ impl<E, U> Invoker<E, U> {
         }
     }
 
-    pub fn undo(&mut self) -> Result<U, Box<Error>> {
+    pub fn undo(&mut self) -> Result<(), U> {
         let command = self.commands.pop().unwrap();
         let unexec = &command.unexec;
         let result = unexec();
@@ -75,7 +89,7 @@ impl<E, U> Invoker<E, U> {
         result
     }
 
-    pub fn redo(&mut self) -> Result<E, Box<Error>> {
+    pub fn redo(&mut self) -> Result<R, E> {
         let command = self.undo_commands.pop().unwrap();
         let exec = &command.exec;
         let result = exec();
