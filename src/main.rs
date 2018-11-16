@@ -1,8 +1,8 @@
 extern crate command_pattern;
 
 use std::error::Error;
-use command_pattern::*;
 use std::any::Any;
+use command_pattern::*;
 
 fn main() -> Result<(), Box<Error>> {
 

@@ -4,21 +4,22 @@
 extern crate command_pattern;
 
 use std::error::Error;
+use std::any::Any;
 use command_pattern::*;
 
 fn main() -> Result<(), Box<Error>> {
 
-    let mut inv = Invoker::new();
+    let mut inv: Invoker<Box<dyn Any>> = Invoker::new();
 
     let result = exec_or_undo_all!(inv, {
 
-        exec: {
+        exec: move {
 
             println!("exec 1");
-            Ok("i am result")
+            Ok(Box::new("i am result"))
 
         },
-        unexec: {
+        unexec: move {
 
             println!("unexec 1");
             Ok(())
@@ -27,16 +28,20 @@ fn main() -> Result<(), Box<Error>> {
 
     })?;
 
-    println!("received: {}", result);
+    let result: &str = result.downcast_ref::<&str>()
+        .ok_or("downcast error")?
+        .to_owned();
 
-    let result = exec_or_undo_all!(inv, {
+    println!("received: {:?}", result);
+
+    let result = exec_or_undo_all!(inv, move {
 
         println!("exec 2");
         Err("i am error")?
 
     })?;
 
-    println!("received: {}", result);
+    println!("received: {:?}", result);
 
     Ok(())
 
