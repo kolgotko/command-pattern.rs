@@ -31,8 +31,8 @@ impl<R,E,U> fmt::Debug for Command<R,E,U> {
 
 #[derive(Debug)]
 pub struct Invoker<R,E=Box<Error>,U=E> {
-    commands: Vec<Box<dyn CommandTrait<R,E,U>>>,
-    undo_commands: Vec<Box<dyn CommandTrait<R,E,U>>>,
+    commands: Vec<Box<dyn CommandTrait<R,E,U> + Send + Sync>>,
+    undo_commands: Vec<Box<dyn CommandTrait<R,E,U> + Send + Sync>>,
 }
 
 impl<R,E,U> Invoker<R,E,U> {
@@ -43,7 +43,7 @@ impl<R,E,U> Invoker<R,E,U> {
         }
     }
 
-    pub fn exec(&mut self, command: impl CommandTrait<R,E,U> + 'static) -> Result<R, E> {
+    pub fn exec(&mut self, command: impl CommandTrait<R,E,U> + Send + Sync + 'static) -> Result<R, E> {
         let exec = command.get_exec();
         self.undo_commands.clear();
         let result = exec();
@@ -51,7 +51,7 @@ impl<R,E,U> Invoker<R,E,U> {
         result
     }
 
-    pub fn exec_or_undo(&mut self, command: impl CommandTrait<R,E,U> + 'static) -> Result<R, E> {
+    pub fn exec_or_undo(&mut self, command: impl CommandTrait<R,E,U> + Send + Sync + 'static) -> Result<R, E> {
         let result = self.exec(command);
 
         match result {
@@ -63,7 +63,7 @@ impl<R,E,U> Invoker<R,E,U> {
         }
     }
 
-    pub fn exec_or_undo_all(&mut self, command: impl CommandTrait<R,E,U> + 'static) -> Result<R, E> {
+    pub fn exec_or_undo_all(&mut self, command: impl CommandTrait<R,E,U> + Send + Sync + 'static) -> Result<R, E> {
         let result = self.exec(command);
 
         match result {
