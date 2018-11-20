@@ -2,20 +2,20 @@ use std::error::Error;
 use std::fmt;
 
 pub trait CommandTrait<R,E,U>: fmt::Debug {
-    fn get_exec(&self) -> &Box<Fn() -> Result<R, E>>;
-    fn get_unexec(&self) -> &Box<Fn() -> Result<(), U>>;
+    fn get_exec(&self) -> &Box<Fn() -> Result<R, E> + Send + Sync>;
+    fn get_unexec(&self) -> &Box<Fn() -> Result<(), U> + Send + Sync>;
 }
 
 pub struct Command<R,E=Box<Error>,U=E> {
-    pub exec: Box<Fn() -> Result<R, E>>,
-    pub unexec: Box<Fn() -> Result<(), U>>,
+    pub exec: Box<Fn() -> Result<R, E> + Send + Sync>,
+    pub unexec: Box<Fn() -> Result<(), U> + Send + Sync>,
 }
 
 impl<R,E,U> CommandTrait<R,E,U> for Command<R,E,U> {
-    fn get_exec(&self) -> &Box<Fn() -> Result<R, E>> {
+    fn get_exec(&self) -> &Box<Fn() -> Result<R, E> + Send + Sync> {
         &self.exec
     }
-    fn get_unexec(&self) -> &Box<Fn() -> Result<(), U>> {
+    fn get_unexec(&self) -> &Box<Fn() -> Result<(), U> + Send + Sync> {
         &self.unexec
     }
 }
