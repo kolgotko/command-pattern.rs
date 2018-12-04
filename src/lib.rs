@@ -22,10 +22,7 @@ impl<R,E,U> CommandTrait<R,E,U> for Command<R,E,U> {
 
 impl<R,E,U> fmt::Debug for Command<R,E,U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Command {{ exec: Box(callback), unexec: Box(callback) }}"
-        )
+        write!(f, "Command {{ exec: Box(callback), unexec: Box(callback) }}")
     }
 }
 
@@ -81,20 +78,30 @@ impl<R,E,U> Invoker<R,E,U> {
         }
     }
 
-    pub fn undo(&mut self) -> Result<(), U> {
-        let command = self.commands.pop().unwrap();
-        let unexec = command.get_unexec();
-        let result = unexec();
-        self.undo_commands.push(command);
-        result
+    pub fn undo(&mut self) -> Option<Result<(), U>> {
+
+        if let Some(command) = self.commands.pop() {
+
+            let unexec = command.get_unexec();
+            let result = unexec();
+            self.undo_commands.push(command);
+            Some(result)
+
+        } else { None }
+
     }
 
-    pub fn redo(&mut self) -> Result<R, E> {
-        let command = self.undo_commands.pop().unwrap();
-        let exec = command.get_exec();
-        let result = exec();
-        self.commands.push(command);
-        result
+    pub fn redo(&mut self) -> Option<Result<R, E>> {
+
+        if let Some(command) = self.undo_commands.pop() {
+
+            let exec = command.get_exec();
+            let result = exec();
+            self.commands.push(command);
+            Some(result)
+
+        } else { None }
+
     }
 }
 
