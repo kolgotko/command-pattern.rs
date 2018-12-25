@@ -1,4 +1,7 @@
-### Example:
+# command-pattern
+Eexperimental realisation a "command" pattern
+
+## Example:
 
 ```rust
 extern crate command_pattern;
